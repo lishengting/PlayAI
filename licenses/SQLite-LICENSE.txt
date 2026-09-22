@@ -1,0 +1,27 @@
+SQLite — 公有领域（Public Domain）
+==================================
+
+本软件随包分发的 SQLite 版本：3.50.2（amalgamation，native/src/sqlite3/sqlite3.c）
+
+SQLite 源码文件本身不携带正式的授权声明文本——SQLite 的全部代码
+已由作者明确贡献至公有领域（public domain）。
+
+官方声明见：
+    https://sqlite.org/copyright.html
+
+原文摘录（节选自上述页面）：
+
+    SQLite is in the Public Domain.
+    ...
+    All of the code and documentation in SQLite has been dedicated to the
+    public domain by the authors. All code authors, and representatives of
+    the companies they work for, have signed affidavits dedicating their
+    contributions to the public domain and originals of those signed
+    affidavits are stored in a firesafe at the main offices of Hwaci.
+    Anyone is free to copy, modify, publish, use, compile, sell, or
+    distribute the original SQLite code, either in source code form or as
+    a compiled binary, for any purpose, commercial or non-commercial, and
+    by any means.
+
+因此，分发本软件中包含的 SQLite 无需附带任何授权文本，亦无任何署名义务。
+此处保留本说明仅为完整性。
