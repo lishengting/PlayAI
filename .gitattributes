@@ -1,0 +1,12 @@
+# 发布仓库统一使用 LF（与主仓库约定一致）
+* text=auto eol=lf
+
+# 二进制文件不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
