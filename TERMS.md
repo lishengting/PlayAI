@@ -105,7 +105,7 @@
 
 ## 九、联系方式
 
-**邮箱：lishengting@gmail.com**
+**邮箱：playai@yeah.net**
 
 ---
 

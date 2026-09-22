@@ -121,7 +121,7 @@
 
 如对本政策有任何疑问、意见或投诉，请联系：
 
-**邮箱：lishengting@gmail.com**
+**邮箱：playai@yeah.net**
 
 我们将在 15 个工作日内回复。
 
