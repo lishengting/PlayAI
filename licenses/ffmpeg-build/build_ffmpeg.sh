@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Build FFmpeg as a minimal static library for in-process video decoding.
+# Build FFmpeg as minimal SHARED libraries for in-process video decoding.
 # Replaces mtmd's subprocess-based (ffprobe + ffmpeg) video path.
+# 动态链接是为满足 LGPL v2.1 第 6 条的「可替换机制」义务。
 #
-# Produces: $HOME/pllm-ffmpeg-build/lib/{libavcodec,libavformat,libavutil,libswscale}.a
+# Produces: $HOME/pllm-ffmpeg-build/lib/libav{codec,format,util}.so.*
+#                                        libsw{scale,resample}.so.*
 # Only includes decoders/demuxers/parsers for common video formats.
 # Run:  bash scripts/build_ffmpeg.sh
 set -euo pipefail
@@ -32,8 +34,8 @@ cd "$SRC_DIR"
 echo "==> configuring (video+audio: h264/hevc/vp8/vp9/mjpeg/mpeg4 + mp3/flac/vorbis/opus/aac)..."
 ./configure \
     --prefix="$INSTALL_DIR" \
-    --enable-static \
-    --disable-shared \
+    --enable-shared \
+    --disable-static \
     --enable-pic \
     --disable-inline-asm \
     --disable-x86asm \
@@ -96,16 +98,19 @@ echo "==> installing to $INSTALL_DIR..."
 make install
 
 # --- Verify ---
+# 共享构建产出「带版本号的实体 .so + 两个 symlink」。用通配匹配，
+# 不硬编码 MAJOR 版本号（n7.1：avcodec 61 / avformat 61 / avutil 59 /
+# swscale 8 / swresample 5）——FFmpeg 升级后这里不会静默失效。
 echo ""
-echo "==> built static libraries:"
+echo "==> built shared libraries:"
 for lib in avcodec avformat avutil swscale swresample; do
-    f="$INSTALL_DIR/lib/lib${lib}.a"
-    if [ -f "$f" ]; then
-        size=$(du -h "$f" | cut -f1)
-        echo "    $f ($size)"
-    else
-        echo "    !! MISSING: $f"
-    fi
+    found=0
+    for f in "$INSTALL_DIR"/lib/lib${lib}.so*; do
+        [ -e "$f" ] || continue
+        found=1
+        echo "    $f ($(du -h "$f" | cut -f1))"
+    done
+    [ "$found" -eq 1 ] || echo "    !! MISSING: $INSTALL_DIR/lib/lib${lib}.so*"
 done
 
 echo ""

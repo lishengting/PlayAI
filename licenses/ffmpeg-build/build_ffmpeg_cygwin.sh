@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# FFmpeg minimal static build for Windows (MSVC via --toolchain=msvc).
+# FFmpeg minimal SHARED build for Windows (MSVC via --toolchain=msvc).
+# 动态链接是为满足 LGPL v2.1 第 6 条的「可替换机制」义务；产物是
+# bin\avcodec-61.dll 等 5 个 DLL + lib\*.lib 导入库。
 # Called by build_ffmpeg.ps1 which sets PLLM_FFMPEG_SRC / PLLM_FFMPEG_INSTALL.
 #
 # Source is copied to /tmp/ (Cygwin root, supports posix permissions)
@@ -24,9 +26,9 @@ echo "==> configuring FFmpeg (toolchain=msvc, video+audio decoders)..."
 bash ./configure \
     --toolchain=msvc \
     --prefix="$INSTALL_DIR" \
-    --enable-static \
+    --enable-shared \
     --enable-pic \
-    --disable-shared \
+    --disable-static \
     --disable-programs \
     --disable-doc \
     --disable-autodetect \

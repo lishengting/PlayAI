@@ -55,6 +55,32 @@
 **本地模型**下载后完全离线可用；**云端模型**需要你自己提供
 API 地址与密钥，费用由你与服务商结算，本软件不经手。
 
+### 系统要求
+
+| 平台 | 要求 |
+|------|------|
+| Windows | Windows 10/11 (x64)。免安装绿色版解压即用，无需额外组件 |
+| Linux | 见下 |
+| macOS | macOS 12+ |
+| Android | Android 8+ |
+| iOS | iOS 14+ |
+| HarmonyOS | HarmonyOS 6+ |
+
+**Linux 需要先装一个系统库**（播放器组件 `media_kit` 依赖它，本仓库不随包分发）：
+
+```bash
+# Debian / Ubuntu
+sudo apt install libmpv2
+# Fedora
+sudo dnf install mpv-libs
+# Arch
+sudo pacman -S mpv
+```
+
+⚠ 需要提供 `libmpv.so.2` 的版本（mpv 0.37+）。较老的发行版（如 Ubuntu 22.04
+自带的 `libmpv1` 只有 `libmpv.so.1`）需要自行升级 mpv 或改用较新的发行版。
+其余依赖（GTK3、ALSA 等）桌面发行版通常已自带。
+
 ---
 
 ## 截图
@@ -80,13 +106,29 @@ API 地址与密钥，费用由你与服务商结算，本软件不经手。
 **Q：能用 GPU 加速吗？**
 支持 Vulkan / Metal 的 GPU 可加速本地推理。
 
+**Q：Linux 版启动报错找不到 `libmpv.so.2`？**
+装一下系统播放器库即可（本仓库不随包分发它）：
+
+```bash
+sudo apt install libmpv2        # Debian / Ubuntu
+```
+
+**Q：Linux 版语音合成（TTS）没有声音？**
+Linux 桌面端暂缺两个可选的本地语音组件，会自动退到系统自带的 espeak-ng：
+OuteTTS 声码器需要的 ONNX Runtime（`libonnxruntime.so`）与 Qwen3-TTS 引擎
+（`libqwen.so`）本仓库尚未在 Linux 上打通。其余功能不受影响。
+
 ---
 
-## 隐私政策与用户协议
+## 隐私政策与用户协议 · Legal
 
-- [隐私政策](PRIVACY.md)
-- [用户协议](TERMS.md)
-- [第三方开源许可声明](THIRD_PARTY_LICENSES.md)
+每份文档提供中英两版（`*.md` 中文 / `*.en.md` English）。
+
+| 中文 | English |
+|------|---------|
+| [隐私政策](PRIVACY.md) | [Privacy Policy](PRIVACY.en.md) |
+| [用户协议](TERMS.md) | [Terms of Use](TERMS.en.md) |
+| [第三方开源许可声明](THIRD_PARTY_LICENSES.md) | [Third-Party License Notices](THIRD_PARTY_LICENSES.en.md) |
 
 ---
 

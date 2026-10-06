@@ -1,7 +1,13 @@
 # 许可协议全文
 
 本目录存放随发布分发的第三方开源许可协议全文。
-组件清单与用途见 [../THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md)。
+组件清单与用途见 [../THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md)（英文版
+[../THIRD_PARTY_LICENSES.en.md](../THIRD_PARTY_LICENSES.en.md)）。
+
+> ⚠ **两份清单各有两份拷贝**：`docs/release/` 的是发布材料真源，`assets/docs/`
+> 的是 App 内「开源许可」子页读取的资源（Flutter 资源必须在包内）。改任一份
+> 都要同步另一份，共四处：
+> `docs/release/THIRD_PARTY_LICENSES{,.en}.md` → `assets/docs/THIRD_PARTY_LICENSES{,.en}.md`
 
 ## 组件许可
 
@@ -17,6 +23,21 @@
 | `ONNXRuntime-ThirdPartyNotices.txt` | 同上，其内部第三方组件 | 各自协议 |
 | `miniaudio-LICENSE.txt` | miniaudio v0.11.25 | Public Domain / MIT-0 |
 | `SQLite-LICENSE.txt` | SQLite 3.50.2 | Public Domain |
+| `media_kit-LICENSE.txt` | media_kit 1.2.6 / media_kit_video 1.3.1 | MIT |
+| `mpv-LICENSE.LGPL` | mpv（`libmpv-2.dll`，`-Dgpl=false` 构建） | **LGPL v2.1+** |
+| `ANGLE-LICENSE.BSD-3` | ANGLE（`libEGL.dll` / `libGLESv2.dll`） | BSD-3-Clause |
+| `SwiftShader-LICENSE.Apache-2.0` | SwiftShader（`vk_swiftshader.dll`） | Apache-2.0 |
+| `Vulkan-Loader-LICENSE.Apache-2.0` | Vulkan Loader（`vulkan-1.dll`） | Apache-2.0 |
+| `zlib-LICENSE.txt` | zlib（`zlib.dll`） | Zlib |
+
+> ⚠ **后 6 份（media_kit 及其 Windows 图形栈）是 2026-10-06 补的。** 此前清单
+> 只列了 10 个组件，而 media_kit 的 Windows 包会**固定塞进 7 个二进制**：
+> `libmpv-2.dll`、`libEGL.dll`、`libGLESv2.dll`、`vk_swiftshader.dll`、
+> `vulkan-1.dll`、`zlib.dll`、`d3dcompiler_47.dll`。其中 `d3dcompiler_47.dll`
+> 是微软 DirectX 可再发行组件（**非开源**，依 Microsoft 条款分发），不在此目录。
+>
+> ⚠ **ANGLE 归档（`flutter-windows-ANGLE-OpenGL-ES` v1.0.1）里连许可文件都不带**，
+> 必须从上游各仓库自行取，见下方「重新生成」。
 
 > Flutter / Dart（BSD-3-Clause）的许可全文由 Flutter SDK 随附，
 > 应用内「开源许可」页（`LicenseRegistry`）会自动列出，不在此目录重复。
@@ -35,8 +56,10 @@ FFmpeg 的**可复现构建材料**（LGPL v2.1 第 6 条要求）：
 公开它们不构成源码泄露——LGPL 要求公开的正是这部分。
 **本软件未对 FFmpeg 源码做任何修改。**
 
-⚠️ 仍待落实：LGPL v2.1 第 6 条对**静态链接**场景还要求提供"可重新链接"
-的材料。详见 [../THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) 第二节。
+✅ **动态链接已落实**（2026-10-05）：FFmpeg 以独立动态库随包分发
+（Windows `avcodec-61.dll` 等 / Linux `libavcodec.so.61` 等），用户可自行替换，
+满足 LGPL v2.1 第 6 条的「可替换机制」。详见
+[../THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) 第二节。
 
 ## 重新生成
 
@@ -56,4 +79,18 @@ Copy-Item $env:TEMP\ort\onnxruntime-win-x64-1.27.1\ThirdPartyNotices.txt docs\re
 
 # FFmpeg 构建脚本
 Copy-Item scripts\build_ffmpeg_cygwin.sh,scripts\build_ffmpeg.ps1,scripts\build_ffmpeg.sh docs\release\licenses\ffmpeg-build\
+```
+
+```powershell
+# media_kit 及其 Windows 图形栈（2026-10-06 补）
+# media_kit 本体：从 pub 缓存取（$env:PUB_CACHE 见 `flutter pub cache` 的位置）
+Copy-Item "$env:PUB_CACHE\hosted\pub.flutter-io.cn\media_kit-1.2.6\LICENSE" docs\release\licenses\media_kit-LICENSE.txt
+
+# 其余五份必须联网从**上游仓库**取——ANGLE 归档自己不带许可文件
+# ⚠ 本机 github.com 被墙，但 raw.githubusercontent.com 与 jsdelivr 可达
+curl.exe -sSL -o docs\release\licenses\mpv-LICENSE.LGPL                 https://raw.githubusercontent.com/mpv-player/mpv/master/LICENSE.LGPL
+curl.exe -sSL -o docs\release\licenses\ANGLE-LICENSE.BSD-3              https://cdn.jsdelivr.net/gh/google/angle@main/LICENSE
+curl.exe -sSL -o docs\release\licenses\SwiftShader-LICENSE.Apache-2.0   https://raw.githubusercontent.com/google/swiftshader/master/LICENSE.txt
+curl.exe -sSL -o docs\release\licenses\Vulkan-Loader-LICENSE.Apache-2.0 https://raw.githubusercontent.com/KhronosGroup/Vulkan-Loader/main/LICENSE.txt
+curl.exe -sSL -o docs\release\licenses\zlib-LICENSE.txt                 https://raw.githubusercontent.com/madler/zlib/master/LICENSE
 ```
