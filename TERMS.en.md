@@ -77,6 +77,15 @@ disseminate through this software.**
 - As required by the Measures for Labelling AI-Generated Synthetic Content and
   similar rules, when you disseminate AI-generated content you must clearly label
   it as AI-generated, as required by law.
+- By default the software adds an **"AI generated" mark in the bottom right
+  corner** of generated images as an explicit label. You may **turn this explicit
+  label off** under Settings → System → Other.
+- If you **turn the explicit label off**, the **obligation to label the content
+  as AI-generated when you disseminate it (publish, share, forward or otherwise
+  make it available to others), and the corresponding liability, rest with you**.
+- Whether or not the explicit label is on, the **implicit label in the file
+  metadata is always retained** and is not changed by that toggle; please do not
+  alter, delete or circumvent that implicit label by technical means.
 
 ---
 
