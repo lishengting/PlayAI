@@ -8,6 +8,16 @@
 # because /cygdrive/d has posix=0 and chmod +x doesn't work there.
 set -euo pipefail
 
+# 宿主自己的 bin 必须在 PATH 里。从 cmd 直接启动的 bash 不保证继承到它——
+# GitHub Actions 的 MSYS2 上实测：configure 能跑通（sed/grep/nproc 都在），
+# 但 `make: command not found`。原因是那些工具命中了 Git for Windows 的
+# usr\bin（有 sed/nproc，**没有 make**），MSYS2 自己的 usr\bin 没进 PATH。
+# .ps1 以 POSIX 形式传入，这里在 bash 内部前置最可靠。
+if [ -n "${PLLM_MSYS_BIN:-}" ]; then
+  export PATH="$PLLM_MSYS_BIN:$PATH"
+fi
+MAKE_BIN="${PLLM_MAKE:-make}"
+
 WIN_SRC=$(cygpath -u "$PLLM_FFMPEG_SRC")
 INSTALL_DIR=$(cygpath -u "$PLLM_FFMPEG_INSTALL")
 BUILD_DIR=/tmp/pllm-ffmpeg-build
@@ -81,7 +91,7 @@ bash ./configure \
     --enable-protocol=file
 
 echo "==> building ($(nproc) jobs)..."
-make -j$(nproc)
+"$MAKE_BIN" -j$(nproc)
 
 echo "==> installing to $INSTALL_DIR..."
 make install

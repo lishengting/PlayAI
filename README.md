@@ -18,7 +18,7 @@
 |------|-------|------|
 | Windows 10/11 (x64) | *待发布* | 免安装绿色版 / 安装程序 |
 | Linux (x64) | *待发布* | |
-| macOS 12+ | *待发布* | |
+| macOS 12+ | *待发布* | 通用版（Intel / Apple Silicon）；首次打开被系统拦下时见 [macOS 安装说明](MACOS_INSTALL.md) |
 | Android 8+ | *待发布* | 应用商店上架后提供商店链接 |
 | iOS 14+ | *待发布* | App Store 上架后提供链接 |
 | HarmonyOS 6+ | *待发布* | 华为应用市场 |

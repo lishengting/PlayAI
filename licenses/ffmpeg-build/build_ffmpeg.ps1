@@ -22,42 +22,37 @@ Set-Location $ProjectRoot
 
 $SrcDir     = Join-Path $ProjectRoot "native\src\ffmpeg"
 $InstallDir = Join-Path $ProjectRoot "native\ffmpeg"
-# bash 宿主：Cygwin 与 MSYS2 都是「bash + make + cygpath」，但对本脚本有两点差异——
-# 盘符路径格式（/cygdrive/d vs /d）与 bash.exe 位置。按存在性探测，Cygwin 优先
-# （本机 D:\cygwin64 是正经 Cygwin；2026-08-02 那版写死的 D:\msys64 已不存在）。
-$bashCandidates = @(
-  "D:\cygwin64\bin\bash.exe",
-  "D:\msys64\usr\bin\bash.exe"
-)
-$CygwinBash = $bashCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $CygwinBash) { Write-Error "bash not found in any candidate: $($bashCandidates -join ', ')"; exit 1 }
 
-# VS Build Tools：与 build_native.ps1 用同一套候选（作者环境 + 标准安装路径）。
-$vsRootCandidates = @(
-  "D:\cygwin64\App\MicrosoftVisualStudio\18\BuildTools",
-  "D:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools"
-)
-$VsRoot = $vsRootCandidates |
-  Where-Object { Test-Path (Join-Path $_ "VC\Auxiliary\Build\vcvars64.bat") } |
-  Select-Object -First 1
-if (-not $VsRoot) { Write-Error "vcvars64.bat not found in any candidate: $($vsRootCandidates -join ', ')"; exit 1 }
-$Vcvars     = Join-Path $VsRoot "VC\Auxiliary\Build\vcvars64.bat"
-$ShScript   = Join-Path $ProjectRoot "scripts\build_ffmpeg_cygwin.sh"
+# 探测逻辑集中在 lib/find_vs.ps1（VS 走 vswhere，bash 走 MSYS2/Cygwin 候选）。
+. "$PSScriptRoot\lib\find_vs.ps1"
 
-if (-not (Test-Path $Vcvars))     { Write-Error "vcvars64.bat not found at $Vcvars"; exit 1 }
-if (-not (Test-Path $ShScript))   { Write-Error "bash script not found at $ShScript"; exit 1 }
+# bash 宿主：Cygwin 与 MSYS2 都是「bash + make + cygpath」。**必须带 make**——
+# Git for Windows 的 bash 有 cygpath/nproc/sh 但没有 make（实测），选中它
+# FFmpeg 的 make 会直接 command-not-found，故 Find-BashWithMake 会把它筛掉。
+$BashExe = Find-BashWithMake
+if (-not $BashExe) {
+  throw ("找不到带 make 的 bash 宿主（Cygwin 或 MSYS2）。`n" +
+         "装 MSYS2（推荐，FFmpeg 官方 Windows/MSVC 构建环境）或 Cygwin，并确保 make 可用。")
+}
 
-Write-Host "==> bash:  $CygwinBash"
-Write-Host "==> VS:    $VsRoot"
+$vs       = Find-VisualStudio
+$Vcvars   = $vs.Vcvars
+$ShScript = Join-Path $ProjectRoot "scripts\build_ffmpeg_cygwin.sh"
+
+if (-not (Test-Path $ShScript)) { Write-Error "bash script not found at $ShScript"; exit 1 }
+
+Write-Host "==> bash:  $BashExe"
+Write-Host "==> VS:    $($vs.Root)"
 Write-Host "==> building FFmpeg $FfmpegVersion (shared, minimal, MSVC)"
 Write-Host "    src:     $SrcDir"
 Write-Host "    install: $InstallDir"
 
 # ---- 1. Clone source (reuse if already present; configure/make run in /tmp) ----
 # FFmpeg 源码是完整的，变的只是 configure 参数；已 clone 过就跳过，省掉重复下载。
-$gitCmd = "D:\cygwin64\App\Git\cmd"
-$env:PATH = ($env:PATH -split ';' | Where-Object { $_ -ne '' -and $_ -notmatch 'cygwin64\\bin' }) -join ';'
-$env:PATH = "$gitCmd;$env:PATH"
+# （源码本身已入库 native/src/ffmpeg，正常路径下这里不会触发下载。）
+$gitCmd = Find-GitCmd
+$env:PATH = Remove-PosixHostFromPath $env:PATH
+if ($gitCmd) { $env:PATH = "$gitCmd;$env:PATH" }
 if (Test-Path "$SrcDir/configure") {
     Write-Host "==> FFmpeg source already present at $SrcDir, skipping clone (source unchanged)"
 } else {
@@ -73,15 +68,33 @@ $env:PLLM_FFMPEG_INSTALL = $InstallDir
 
 # ---- 3. Write .bat wrapper (vcvars + bash) ----
 # 盘符路径格式随 bash 宿主而变：Cygwin 用 /cygdrive/d/...，MSYS2 用 /d/...
-$drive = $ShScript.Substring(0,1).ToLower()
-$rest  = $ShScript.Substring(2).Replace("\","/")
-$ShCygwin = if ($CygwinBash -match 'msys64') { "/$drive$rest" } else { "/cygdrive/$drive$rest" }
+# （ConvertTo-BashPath 按宿主运行时 DLL 判断，不靠安装目录名猜）
+$ShBashPath = ConvertTo-BashPath -BashExe $BashExe -WindowsPath $ShScript
 
-$MsysUsrBin = Split-Path $CygwinBash -Parent
+$BashBin = Split-Path $BashExe -Parent
+Write-Host "==> bash bin: $BashBin"
+
+# 宿主自己的 bin 必须以 **POSIX 形式**传给 .sh，由 bash 内部 export PATH。
+# 为什么不能只靠 .bat 里的 set PATH：从 cmd 直接启动的 bash 不保证 PATH 里有它。
+# GitHub Actions 的 MSYS2 上实测就如此——configure 能跑通（sed/grep/nproc 有），
+# 但 `make: command not found`：那些工具命中的是 Git for Windows 的 usr\bin
+# （有 sed/nproc，**没有 make**），MSYS2 自己的 usr\bin 没真正进 PATH。
+$env:PLLM_MSYS_BIN = ConvertTo-BashPath -BashExe $BashExe -WindowsPath $BashBin
+$makeExe = Join-Path $BashBin 'make.exe'
+if (Test-Path $makeExe) {
+  # 绝对路径兜底：即使 PATH 拼接仍出问题，make 本身也一定起得来
+  $env:PLLM_MAKE = ConvertTo-BashPath -BashExe $BashExe -WindowsPath $makeExe
+  Write-Host "==> make:     $makeExe"
+} else {
+  Write-Warning "宿主目录下没有 make.exe：$makeExe"
+}
+
 $batFile = Join-Path $env:TEMP "pllm_build_ffmpeg.bat"
 # 不用 -l（login 会重置 PATH 丢 cl.exe）；先 prepend bash 自己的 bin 让 make/cygpath 可用，
 # bash 非 login 继承 vcvars 的 Windows PATH（含 cl.exe）。
-$batContent = "@echo off`r`ncall `"$Vcvars`"`r`nset `"PATH=$MsysUsrBin;%PATH%`"`r`n`"$CygwinBash`" `"$ShCygwin`""
+# ⚠ 这个 prepend 不只是方便：PATH 里若混有另一个 POSIX 宿主（Git for Windows 的
+#   usr\bin 常在里面），bash 会解析到**对方**的 make/cygpath，行为完全错乱。
+$batContent = "@echo off`r`ncall `"$Vcvars`"`r`nset `"PATH=$BashBin;%PATH%`"`r`n`"$BashExe`" `"$ShBashPath`""
 Set-Content -Path $batFile -Value $batContent -Encoding ASCII
 
 Write-Host "==> building (MSVC + bash)..."

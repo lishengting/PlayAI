@@ -1,15 +1,17 @@
 # PlayAI Privacy Policy
 
 **Effective date: 22 September 2026**
-**Last updated: 22 September 2026**
+**Last updated: 27 October 2026**
 
 This policy applies to all desktop and mobile versions of "PlayAI" (Chinese name
 玩AI, hereinafter "this software"). This software is developed and published by
 **Li Shengting** (an individual developer, hereinafter "the developer").
 
-**In one sentence: this software has no server of its own, and does not collect
-or upload any of your data.** Your conversations, attachments, API keys and logs
-are stored only on your own device.
+**In one sentence: this software has no server of its own and does not collect
+your data.** Your conversations, attachments, API keys and logs are stored only
+on your own device. Only when you enable a **cloud model** and explicitly agree
+in the in-app dialog is the relevant content sent to the third-party AI service
+you selected (see Section 4).
 
 ---
 
@@ -24,7 +26,10 @@ crash-reporting components**. Specifically, it:
   telemetry;
 - does **not** upload your conversation content, attachments, generated output,
   or log files;
-- does **not** share or trade any of your information with third parties;
+- does **not** share or trade any of your information with third parties — the
+  **only exception** is when you enable a cloud model and explicitly agree in the
+  in-app dialog, in which case the content is sent to the third-party AI service
+  you selected (see Section 4);
 - contains **no advertising** and no third-party advertising SDK.
 
 ---
@@ -82,14 +87,40 @@ When you tap to download a model, the software downloads the model file from a
 public model repository (ModelScope, hf-mirror, etc.). This sends an ordinary
 HTTP request and **contains none of your personal information**.
 
-**2. Using cloud models (configured and triggered by you)**
+**2. Using cloud models (optional; requires your explicit consent)**
 
-If you enter an endpoint URL and API key for a cloud model service yourself, then
-when you send a message, **the content of that conversation (including any images,
-audio or video you attached) is sent to the provider you specified**. This is a
-feature you enabled deliberately; the data is handled by that provider under its
-own privacy policy, **independently of this software and its developer**. If you
-do not configure a cloud service, this software runs entirely offline.
+Cloud models are an **optional feature**. When you select a cloud model, the app
+first shows a dialog explaining:
+
+- **What is sent** (depending on the features you use):
+  - conversation text, system prompt, and message history;
+  - images, video frames, audio, and text attachments you add;
+  - recordings for speech-to-text, text for speech synthesis, and reference audio
+    for voice cloning;
+  - prompts and reference images for image/video generation.
+- **Who it is sent to**: the dialog shows the provider name and endpoint domain.
+  Providers come from the built-in list (Alibaba Cloud Bailian, Volcano Ark,
+  Baidu Qianfan, Tencent Hunyuan, Zhipu AI, Moonshot Kimi, DeepSeek, MiniMax) or
+  from a LAN/local address you add yourself.
+- **Purpose**: solely to generate the reply, transcription, speech, image or video
+  you requested.
+
+**No content is sent unless you tap "Agree and continue"; tapping "Cancel" sends
+nothing.** Consent is recorded per provider endpoint, so the same endpoint is not
+asked again; changing the address (i.e. changing the recipient) triggers a new
+request.
+
+The content is processed and retained by the third-party provider under its own
+privacy policy. **The developer does not receive, store, or access it.** Built-in
+providers are publicly available commercial AI APIs, and data is transmitted over
+HTTPS; the developer has confirmed that these providers offer data protection
+consistent with their published privacy policies. Specific processing and
+retention periods are governed by your agreement with the provider, so please
+review its privacy policy before use. **Do not send sensitive personal
+information such as ID numbers, bank card numbers, or medical records.**
+
+If you do not configure or enable a cloud service, this software runs entirely
+on your device.
 
 **3. Checking for version updates (can be disabled in settings)**
 
@@ -131,7 +162,10 @@ control at all times**:
 - delete any single conversation, any single user, or all data from within the
   software;
 - delete files directly from the application data directory on your device;
-- uninstall this software to erase all data.
+- uninstall this software to erase all data;
+- for data retained by a cloud provider, request access or deletion from that
+  provider as described in its privacy policy. You can clear the API key or delete
+  the provider configuration in settings at any time to stop further sending.
 
 ---
 

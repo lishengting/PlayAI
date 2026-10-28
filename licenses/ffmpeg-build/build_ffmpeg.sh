@@ -10,25 +10,54 @@
 set -euo pipefail
 
 FFMPEG_VERSION="${FFMPEG_VERSION:-n7.1}"
-SRC_DIR="${PLLM_FFMPEG_SRC:-$HOME/pllm-ffmpeg-src}"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALL_DIR="${PLLM_FFMPEG_BUILD:-$HOME/pllm-ffmpeg-build}"
 JOBS="${JOBS:-$(nproc)}"
 
-echo "==> building FFmpeg $FFMPEG_VERSION (static, minimal)"
+# 源码目录：优先用仓库内 vendored 的 native/src/ffmpeg（与 Windows 版
+# build_ffmpeg.ps1 一致）。CI 是干净 clone，若默认去 git.ffmpeg.org 拉，
+# 既慢，又会让构建源与仓库固定的版本脱钩（可复现性 / LGPL 合规都受影响）。
+if [ -n "${PLLM_FFMPEG_SRC:-}" ]; then
+  SRC_DIR="$PLLM_FFMPEG_SRC"
+elif [ -f "$REPO_ROOT/native/src/ffmpeg/configure" ]; then
+  SRC_DIR="$REPO_ROOT/native/src/ffmpeg"
+else
+  SRC_DIR="$HOME/pllm-ffmpeg-src"
+fi
+
+echo "==> building FFmpeg $FFMPEG_VERSION (shared, minimal)"
 echo "    src:   $SRC_DIR"
 echo "    install: $INSTALL_DIR"
 echo "    jobs:  $JOBS"
 
 # --- Clone source (skip if already present) ---
-if [ ! -d "$SRC_DIR/.git" ]; then
+# 判据用 configure 而不是 .git：vendored 源码是平铺文件、没有 .git 目录，
+# 用 .git 判断会对着一份完整源码去做 git clone 而失败。
+if [ ! -f "$SRC_DIR/configure" ]; then
     echo "==> cloning FFmpeg $FFMPEG_VERSION..."
     git clone --depth 1 --branch "$FFMPEG_VERSION" \
         https://git.ffmpeg.org/ffmpeg.git "$SRC_DIR"
 else
-    echo "==> source already exists, skipping clone"
+    echo "==> source already present, skipping clone"
 fi
 
-cd "$SRC_DIR"
+# --- Copy to a scratch build tree ---
+# FFmpeg 的 configure/make 是**就地构建**，会往源码目录里写大量产物。
+# 源码现在优先取仓库内的 native/src/ffmpeg，就地编会把工作树弄脏
+# （Windows 版 build_ffmpeg.ps1 同样是先拷到 /tmp 再编）。
+BUILD_TREE="${PLLM_FFMPEG_TREE:-$HOME/pllm-ffmpeg-buildtree}"
+echo "==> copying source to $BUILD_TREE ..."
+rm -rf "$BUILD_TREE"
+cp -a "$SRC_DIR" "$BUILD_TREE"
+cd "$BUILD_TREE"
+
+# 恢复可执行位：git 里 vendored 的 configure / ffbuild/*.sh 是 100644（本仓库
+# 实测 configure 与 10 个 .sh 都没有可执行位），cp -a 会把这个状态一起带过来，
+# 直接 ./configure 会 "Permission denied"（CI 上实测，exit 126）。
+# Windows 版 build_ffmpeg_cygwin.sh 出于同样原因也要做这一步。
+chmod +x configure 2>/dev/null || true
+chmod +x ffbuild/*.sh 2>/dev/null || true
+find . -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
 
 # --- Configure ---
 echo "==> configuring (video+audio: h264/hevc/vp8/vp9/mjpeg/mpeg4 + mp3/flac/vorbis/opus/aac)..."
